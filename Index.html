@@ -370,15 +370,32 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-gray-400">Stok:</span>
-                    <input type="number" :value="p.stock" 
-                        @change="async (e) => {
-                            await fetch(WORKER_URL, {
-                                method: 'POST',
-                                body: JSON.stringify({ action: 'update_product', data: { index: index, field: 'stock', value: parseInt(e.target.value) }})
-                            });
-                            Swal.fire('Updated', 'Stok berhasil diubah', 'success');
-                        }" 
-                        class="w-16 bg-black border border-red-600 rounded px-2 py-1 text-xs text-center">
+                    // Ganti bagian input di dalam template x-for admin panel menjadi:
+<input type="number" :value="p.stock" 
+    @change="async (e) => {
+        const newValue = parseInt(e.target.value);
+        try {
+            const res = await fetch(WORKER_URL, {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    action: 'update_product', 
+                    data: { 
+                        id: index,      // Mengirim index sebagai ID
+                        stock: newValue // Mengirim field stock secara spesifik
+                    }
+                })
+            });
+            const result = await res.json();
+            if(result.status === 'ok') {
+                Swal.fire('Updated', 'Stok berhasil diubah', 'success');
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (err) {
+            Swal.fire('Gagal', 'Gagal update ke database', 'error');
+        }
+    }" 
+    class="w-16 bg-black border border-red-600 rounded px-2 py-1 text-xs text-center">
                 </div>
             </div>
         </template>
@@ -617,7 +634,7 @@ get filteredProducts() {
                 date: Date.now() 
             });
 
-            await Swal.fire('Berhasil!', 'Pembelian sukses! Stok terpotong otomatis.', 'success');
+            await Swal.fire('Berhasil!', 'Pembelian sukses! Mohon Tunggu.', 'success');
             
             const pesanWA = `Halo Admin, saya sudah beli ${productName} (Qty: ${qty}).\nEmail: ${this.user.email}`;
             window.open(`https://wa.me/6281330750863?text=${encodeURIComponent(pesanWA)}`, '_blank');
@@ -754,4 +771,4 @@ get filteredProducts() {
 
 
 </body>
-                                                                             </html>
+                                                    </html>
