@@ -361,46 +361,31 @@
                 <div class="stat-card p-6 overflow-x-auto">
                 	<div class="stat-card p-6 mt-10">
     <h2 class="text-xl font-black italic mb-6 accent-red">MANAGE PRODUCTS (STOCK)</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <template x-for="(p, index) in products" :key="index">
-            <div class="bg-white/5 p-4 rounded-xl border border-white/10 flex items-center justify-between">
-                <div>
-                    <p class="font-bold text-sm" x-text="p.name"></p>
-                    <p class="text-[10px] text-gray-500" x-text="'Harga: Rp ' + p.price.toLocaleString()"></p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xs text-gray-400">Stok:</span>
-                    // Ganti bagian input di dalam template x-for admin panel menjadi:
-<input type="number" :value="p.stock" 
-    @change="async (e) => {
-        const newValue = parseInt(e.target.value);
-        try {
-            const res = await fetch(WORKER_URL, {
-                method: 'POST',
-                body: JSON.stringify({ 
-                    action: 'update_product', 
-                    data: { 
-                        id: index,      // Mengirim index sebagai ID
-                        stock: newValue // Mengirim field stock secara spesifik
-                    }
-                })
-            });
-            const result = await res.json();
-            if(result.status === 'ok') {
-                Swal.fire('Updated', 'Stok berhasil diubah', 'success');
-            } else {
-                throw new Error(result.error);
-            }
-        } catch (err) {
-            Swal.fire('Gagal', 'Gagal update ke database', 'error');
-        }
-    }" 
-    class="w-16 bg-black border border-red-600 rounded px-2 py-1 text-xs text-center">
-                </div>
+    <!-- Cari bagian MANAGE PRODUCTS (STOCK) di HTML Anda -->
+<<template x-for="(p, index) in products" :key="index">
+    <div class="bg-white/5 p-4 rounded-xl border border-white/10 flex items-center justify-between mb-2">
+        <div class="flex-1">
+            <p class="font-bold text-sm text-white" x-text="p.name"></p>
+            <p class="text-[10px] text-gray-500" x-text="'Harga: Rp ' + p.price.toLocaleString()"></p>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <div class="flex flex-col items-end">
+                <span class="text-[9px] text-gray-400 uppercase mb-1">Stok Sekarang</span>
+                <input type="number" x-model="p.stock" 
+                    class="w-20 bg-black border border-gray-700 rounded px-2 py-1 text-xs text-center text-red-500 font-bold focus:border-red-600 outline-none">
             </div>
-        </template>
+            
+            <!-- TOMBOL KONFIRMASI -->
+            <button @click="confirmUpdate(index, p)" 
+                class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-all active:scale-95">
+                <i class="fas fa-save"></i>
+            </button>
+        </div>
     </div>
-</div>
+</template>
+
+
                     <h2 class="text-xl font-black italic mb-6 accent-red">ADMIN CONTROL</h2>
                     <table class="w-full text-left text-xs uppercase font-bold">
                         <thead class="text-gray-500 border-b border-white/5">
@@ -570,6 +555,42 @@ get filteredProducts() {
                 this.loading = false;
             }
         },
+        
+        async confirmUpdate(index, product) {
+            const { isConfirmed } = await Swal.fire({
+                title: 'Update Stok?',
+                text: `Ubah stok ${product.name} menjadi ${product.stock}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#ff3131',
+                confirmButtonText: 'Ya, Update!'
+            });
+
+            if (isConfirmed) {
+                Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() });
+                try {
+                    const res = await fetch(this.WORKER_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ 
+                            action: 'update_product', 
+                            data: { 
+                                id: index, 
+                                stock: parseInt(product.stock) 
+                            }
+                        })
+                    });
+                    const result = await res.json();
+                    if(result.status === 'ok') {
+                        Swal.fire('Berhasil!', 'Stok database telah diperbarui.', 'success');
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (err) {
+                    Swal.fire('Gagal', 'Koneksi ke Worker bermasalah.', 'error');
+                }
+            }
+        },
+
         
         async loginGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
@@ -771,4 +792,4 @@ get filteredProducts() {
 
 
 </body>
-                                                    </html>
+                       </html>
